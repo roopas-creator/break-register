@@ -8,7 +8,7 @@
     body { font-family: Arial; background:#f2f2f2; }
     .box {
       max-width: 360px;
-      margin: 60px auto;
+      margin: 80px auto;
       background: #fff;
       padding: 20px;
       border-radius: 8px;
@@ -20,7 +20,7 @@
     }
     button {
       background: #007bff;
-      color: #fff;
+      color: white;
       border: none;
       font-size: 16px;
     }
@@ -28,41 +28,69 @@
 </head>
 
 <body>
-  <div class="box">
-    <h3>Break Register Login</h3>
-    <input id="empId" placeholder="Employee ID">
-    <button onclick="login()">Login</button>
-    <p id="msg"></p>
-  </div>
+<div class="box">
+  <h3>Break Register Login</h3>
+
+  <input id="loginname" placeholder="Login Name">
+  <input id="password" type="password" placeholder="Password">
+
+  <button onclick="login()">Login</button>
+  <p id="msg"></p>
+</div>
 
 <script>
-  const supabase = supabase.createClient(
-    "https://ntfbcahivqivgjdexkgf.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc"
-  );
+const supabase = supabase.createClient(
+  "https://ntfbcahivqivgjdexkgf.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc",
+  { auth: { persistSession: true } }
+);
 
-  async function login() {
-    const empId = document.getElementById("empId").value;
+async function login() {
+  const loginname = document.getElementById("loginname").value;
+  const password = document.getElementById("password").value;
+  const email = loginname + "@break.local";
 
-    const { data, error } = await supabase
-      .from("employees")
-      .select("*")
-      .eq("emp_id", empId)
-      .single();
+  // try login
+  let { error } = await supabase.auth.signInWithPassword({
+    email, password
+  });
 
-    if (error || !data) {
-      document.getElementById("msg").innerText = "Invalid Employee ID";
+  // first time → create account
+  if (error) {
+    let { error: signupError } = await supabase.auth.signUp({
+      email, password
+    });
+    if (signupError) {
+      document.getElementById("msg").innerText = signupError.message;
       return;
     }
-
-    if (data.role === "EMP") {
-      alert("Employee login successful");
-      // next step: redirect to employee page
-    } else {
-      alert("HOD login successful");
-      // next step: redirect to HOD page
-    }
+    document.getElementById("msg").innerText =
+      "Password set. Please login again.";
+    return;
   }
+
+  // check user_master
+  const { data, error: dbErr } = await supabase
+    .from("user_master")
+    .select("user_id, role_id, is_active")
+    .eq("loginname", loginname)
+    .single();
+
+  if (dbErr || !data || !data.is_active) {
+    document.getElementById("msg").innerText =
+      "User inactive or not authorized";
+    return;
+  }
+
+  if (data.role_id === 1) {
+    alert("STAFF login success");
+    // next: staff dashboard
+  } else {
+    alert("HOD login success");
+    // next: HOD dashboard
+  }
+}
 </script>
 </body>
 </html>
+
