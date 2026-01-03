@@ -71,7 +71,7 @@ button {
   <h2>Break Register Login</h2>
 
   <div class="input-group">
-    <input id="loginname" placeholder="Login ID">
+    <input id="loginname" placeholder="Login ID (eg: 1459)">
   </div>
 
   <div class="input-group">
@@ -86,13 +86,10 @@ button {
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-/* 🔑 SUPABASE CONFIG */
-const SUPABASE_URL = "https://ntfbcahivqivgjdexkgf.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc";
-
+/* 🔑 SUPABASE CONFIG (DO NOT CHANGE) */
 const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
+const SUPABASE_URL = "https://ntfbcahivqivgjdexkgf.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc";,
   { auth: { persistSession: true } }
 );
 
@@ -102,7 +99,7 @@ window.togglePwd = function () {
   p.type = p.type === "password" ? "text" : "password";
 };
 
-/* 🔐 LOGIN LOGIC */
+/* 🔐 LOGIN ONLY (NO SIGNUP) */
 window.login = async function () {
   const loginname = document.getElementById("loginname").value.trim();
   const password  = document.getElementById("password").value;
@@ -116,7 +113,9 @@ window.login = async function () {
     return;
   }
 
+  /* Email mapping rule */
   const email = loginname + "@gmail.com";
+
   /* 1️⃣ Check user exists in user_master */
   const { data: user, error: userErr } = await supabase
     .from("user_master")
@@ -134,40 +133,25 @@ window.login = async function () {
     return;
   }
 
-  /* 2️⃣ Try normal login */
+  /* 2️⃣ LOGIN (Auth user already exists) */
   const { error: loginErr } = await supabase.auth.signInWithPassword({
-    email, password
+    email,
+    password
   });
 
-  /* 3️⃣ First-time password setup */
   if (loginErr) {
-    if (loginErr.message.includes("Invalid login credentials")) {
-      const { error: signupErr } = await supabase.auth.signUp({
-        email, password
-      });
-
-      if (signupErr) {
-        msg.innerText = signupErr.message;
-        return;
-      }
-
-      msg.style.color = "green";
-      msg.innerText = "Password created. Please login again.";
-      return;
-    }
-
-    msg.innerText = loginErr.message;
+    msg.innerText = "Invalid login ID or password";
     return;
   }
 
-  /* 4️⃣ Login success */
+  /* 3️⃣ SUCCESS */
   msg.style.color = "green";
   msg.innerText =
     user.role_id === 1
       ? "STAFF Login Successful"
       : "HOD Login Successful";
 
-  // 🔜 next step: redirect to dashboard
+  // 🔜 next: redirect to dashboard
 };
 </script>
 
