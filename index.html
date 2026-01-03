@@ -59,7 +59,6 @@ button {
 
 #msg {
   margin-top: 12px;
-  color: red;
   text-align: center;
   font-size: 14px;
 }
@@ -87,62 +86,89 @@ button {
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-const supabaseClient = createClient(
-  "https://ntfbcahivqivgjdexkgf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc",
+/* 🔑 SUPABASE CONFIG */
+const SUPABASE_URL = "https://ntfbcahivqivgjdexkgf.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc";
+
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
   { auth: { persistSession: true } }
 );
 
+/* 👁 Show / Hide Password */
 window.togglePwd = function () {
   const p = document.getElementById("password");
   p.type = p.type === "password" ? "text" : "password";
 };
 
+/* 🔐 LOGIN LOGIC */
 window.login = async function () {
-  const loginname = document.getElementById("loginname").value;
-  const password = document.getElementById("password").value;
+  const loginname = document.getElementById("loginname").value.trim();
+  const password  = document.getElementById("password").value;
   const msg = document.getElementById("msg");
+
+  msg.style.color = "red";
+  msg.innerText = "";
 
   if (!loginname || !password) {
     msg.innerText = "Enter login ID and password";
     return;
   }
 
-  const email = loginname + "@breakregister.com"; // ✅ VALID DOMAIN
+  const email = loginname + "@breakregister.com";
 
-  let { error } = await supabaseClient.auth.signInWithPassword({
-    email, password
-  });
-
-  if (error) {
-    let { error: signupError } = await supabaseClient.auth.signUp({
-      email, password
-    });
-
-    if (signupError) {
-      msg.innerText = signupError.message;
-      return;
-    }
-
-    msg.innerText = "Password created. Please login again.";
-    return;
-  }
-
-  const { data, error: dbErr } = await supabaseClient
+  /* 1️⃣ Check user exists in user_master */
+  const { data: user, error: userErr } = await supabase
     .from("user_master")
     .select("role_id, is_active")
     .eq("loginname", loginname)
     .single();
 
-  if (dbErr || !data || !data.is_active) {
-    msg.innerText = "User inactive or not allowed";
+  if (userErr || !user) {
+    msg.innerText = "User not registered. Contact admin.";
     return;
   }
 
+  if (!user.is_active) {
+    msg.innerText = "User is deactivated. Contact admin.";
+    return;
+  }
+
+  /* 2️⃣ Try normal login */
+  const { error: loginErr } = await supabase.auth.signInWithPassword({
+    email, password
+  });
+
+  /* 3️⃣ First-time password setup */
+  if (loginErr) {
+    if (loginErr.message.includes("Invalid login credentials")) {
+      const { error: signupErr } = await supabase.auth.signUp({
+        email, password
+      });
+
+      if (signupErr) {
+        msg.innerText = signupErr.message;
+        return;
+      }
+
+      msg.style.color = "green";
+      msg.innerText = "Password created. Please login again.";
+      return;
+    }
+
+    msg.innerText = loginErr.message;
+    return;
+  }
+
+  /* 4️⃣ Login success */
   msg.style.color = "green";
-  msg.innerText = data.role_id === 1
-    ? "STAFF Login Successful"
-    : "HOD Login Successful";
+  msg.innerText =
+    user.role_id === 1
+      ? "STAFF Login Successful"
+      : "HOD Login Successful";
+
+  // 🔜 next step: redirect to dashboard
 };
 </script>
 
