@@ -3,7 +3,9 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Break Register Login</title>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     body { font-family: Arial; background:#f2f2f2; }
     .box {
@@ -16,81 +18,89 @@
     input, button {
       width: 100%;
       padding: 12px;
-      margin: 8px 0;
+      margin: 10px 0;
+      font-size: 16px;
     }
     button {
       background: #007bff;
       color: white;
       border: none;
-      font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
+
 <div class="box">
   <h3>Break Register Login</h3>
 
-  <input id="loginname" placeholder="Login Name">
+  <input id="loginname" placeholder="Login Name (eg: 1459)">
   <input id="password" type="password" placeholder="Password">
 
   <button onclick="login()">Login</button>
+
   <p id="msg"></p>
 </div>
 
 <script>
-const supabase = supabase.createClient(
-  "https://ntfbcahivqivgjdexkgf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc",
-  { auth: { persistSession: true } }
-);
+  const supabase = supabase.createClient(
+    "https://ntfbcahivqivgjdexkgf.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc",
+    { auth: { persistSession: true } }
+  );
 
-async function login() {
-  const loginname = document.getElementById("loginname").value;
-  const password = document.getElementById("password").value;
-  const email = loginname + "@break.local";
+  async function login() {
+    const loginname = document.getElementById("loginname").value;
+    const password  = document.getElementById("password").value;
+    const msg = document.getElementById("msg");
 
-  // try login
-  let { error } = await supabase.auth.signInWithPassword({
-    email, password
-  });
-
-  // first time → create account
-  if (error) {
-    let { error: signupError } = await supabase.auth.signUp({
-      email, password
-    });
-    if (signupError) {
-      document.getElementById("msg").innerText = signupError.message;
+    if (!loginname || !password) {
+      msg.innerText = "Enter login name and password";
       return;
     }
-    document.getElementById("msg").innerText =
-      "Password set. Please login again.";
-    return;
-  }
 
-  // check user_master
-  const { data, error: dbErr } = await supabase
-    .from("user_master")
-    .select("user_id, role_id, is_active")
-    .eq("loginname", loginname)
-    .single();
+    const email = loginname + "@break.local";
 
-  if (dbErr || !data || !data.is_active) {
-    document.getElementById("msg").innerText =
-      "User inactive or not authorized";
-    return;
-  }
+    // try sign in
+    let { error } = await supabase.auth.signInWithPassword({
+      email, password
+    });
 
-  if (data.role_id === 1) {
-    alert("STAFF login success");
-    // next: staff dashboard
-  } else {
-    alert("HOD login success");
-    // next: HOD dashboard
+    // first-time user → auto signup
+    if (error) {
+      let { error: signupError } = await supabase.auth.signUp({
+        email, password
+      });
+
+      if (signupError) {
+        msg.innerText = signupError.message;
+        return;
+      }
+
+      msg.innerText = "Password created. Click Login again.";
+      return;
+    }
+
+    // check user_master
+    const { data, error: dbErr } = await supabase
+      .from("user_master")
+      .select("user_id, role_id, is_active")
+      .eq("loginname", loginname)
+      .single();
+
+    if (dbErr || !data || !data.is_active) {
+      msg.innerText = "User inactive or not allowed";
+      return;
+    }
+
+    if (data.role_id === 1) {
+      msg.innerText = "STAFF login successful";
+    } else {
+      msg.innerText = "HOD login successful";
+    }
   }
-}
 </script>
+
 </body>
 </html>
-
