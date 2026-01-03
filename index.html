@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Break Register Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial; background:#f2f2f2; }
+    .box {
+      max-width: 360px;
+      margin: 60px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h3>Break Register Login</h3>
+    <input id="empId" placeholder="Employee ID">
+    <button onclick="login()">Login</button>
+    <p id="msg"></p>
+  </div>
+
+<script>
+  const supabase = supabase.createClient(
+    "https://ntfbcahivqivgjdexkgf.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc"
+  );
+
+  async function login() {
+    const empId = document.getElementById("empId").value;
+
+    const { data, error } = await supabase
+      .from("employees")
+      .select("*")
+      .eq("emp_id", empId)
+      .single();
+
+    if (error || !data) {
+      document.getElementById("msg").innerText = "Invalid Employee ID";
+      return;
+    }
+
+    if (data.role === "EMP") {
+      alert("Employee login successful");
+      // next step: redirect to employee page
+    } else {
+      alert("HOD login successful");
+      // next step: redirect to HOD page
+    }
+  }
+</script>
+</body>
+</html>
