@@ -1,123 +1,149 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Break Register Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break Register Login</title>
 
-  <style>
-    body { font-family: Arial; background:#f2f2f2; }
-    .box {
-      max-width: 360px;
-      margin: 80px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-    }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      font-size: 16px;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .show-pass {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 14px;
-    }
-  </style>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #eef2f5;
+}
+
+.card {
+  max-width: 360px;
+  margin: 80px auto;
+  background: #fff;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.eye {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #555;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#msg {
+  margin-top: 12px;
+  color: red;
+  text-align: center;
+  font-size: 14px;
+}
+</style>
 </head>
 
 <body>
 
-<div class="box">
-  <h3>Break Register Login</h3>
+<div class="card">
+  <h2>Break Register Login</h2>
 
-  <input id="loginname" placeholder="Login Name (eg: 1234)">
-  <input id="password" type="password" placeholder="Password">
-
-  <div class="show-pass">
-    <input type="checkbox" id="showPwd"> Show Password
+  <div class="input-group">
+    <input id="loginname" placeholder="Login ID">
   </div>
 
-  <button id="loginBtn">Login</button>
+  <div class="input-group">
+    <input id="password" type="password" placeholder="Password">
+    <span class="eye" onclick="togglePwd()">👁</span>
+  </div>
 
-  <p id="msg"></p>
+  <button onclick="login()">Login</button>
+  <div id="msg"></div>
 </div>
 
-<!-- ✅ IMPORTANT: module script -->
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-  const supabaseClient = createClient(
-    "https://ntfbcahivqivgjdexkgf.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc",
-    { auth: { persistSession: true } }
-  );
+const supabaseClient = createClient(
+  "https://ntfbcahivqivgjdexkgf.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc",
+  { auth: { persistSession: true } }
+);
 
-  const loginBtn = document.getElementById("loginBtn");
-  const showPwd = document.getElementById("showPwd");
+window.togglePwd = function () {
+  const p = document.getElementById("password");
+  p.type = p.type === "password" ? "text" : "password";
+};
 
-  showPwd.addEventListener("change", () => {
-    const pwd = document.getElementById("password");
-    pwd.type = showPwd.checked ? "text" : "password";
+window.login = async function () {
+  const loginname = document.getElementById("loginname").value;
+  const password = document.getElementById("password").value;
+  const msg = document.getElementById("msg");
+
+  if (!loginname || !password) {
+    msg.innerText = "Enter login ID and password";
+    return;
+  }
+
+  const email = loginname + "@breakregister.com"; // ✅ VALID DOMAIN
+
+  let { error } = await supabaseClient.auth.signInWithPassword({
+    email, password
   });
 
-  loginBtn.addEventListener("click", async () => {
-    const loginname = document.getElementById("loginname").value;
-    const password  = document.getElementById("password").value;
-    const msg = document.getElementById("msg");
-
-    if (!loginname || !password) {
-      msg.innerText = "Enter login name and password";
-      return;
-    }
-
-    const email = loginname + "@break.local";
-
-    // try login
-    let { error } = await supabaseClient.auth.signInWithPassword({
+  if (error) {
+    let { error: signupError } = await supabaseClient.auth.signUp({
       email, password
     });
 
-    // first time → create account
-    if (error) {
-      let { error: signupError } = await supabaseClient.auth.signUp({
-        email, password
-      });
-
-      if (signupError) {
-        msg.innerText = signupError.message;
-        return;
-      }
-
-      msg.innerText = "Password created. Click Login again.";
+    if (signupError) {
+      msg.innerText = signupError.message;
       return;
     }
 
-    // check user_master
-    const { data, error: dbErr } = await supabaseClient
-      .from("user_master")
-      .select("user_id, role_id, is_active")
-      .eq("loginname", loginname)
-      .single();
+    msg.innerText = "Password created. Please login again.";
+    return;
+  }
 
-    if (dbErr || !data || !data.is_active) {
-      msg.innerText = "User inactive or not allowed";
-      return;
-    }
+  const { data, error: dbErr } = await supabaseClient
+    .from("user_master")
+    .select("role_id, is_active")
+    .eq("loginname", loginname)
+    .single();
 
-    msg.innerText =
-      data.role_id === 1
-        ? "STAFF login successful"
-        : "HOD login successful";
-  });
+  if (dbErr || !data || !data.is_active) {
+    msg.innerText = "User inactive or not allowed";
+    return;
+  }
+
+  msg.style.color = "green";
+  msg.innerText = data.role_id === 1
+    ? "STAFF Login Successful"
+    : "HOD Login Successful";
+};
 </script>
 
 </body>
