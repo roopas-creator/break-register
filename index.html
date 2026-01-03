@@ -27,6 +27,12 @@
       border: none;
       cursor: pointer;
     }
+    .show-pass {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
   </style>
 </head>
 
@@ -38,17 +44,27 @@
   <input id="loginname" placeholder="Login Name (eg: 1459)">
   <input id="password" type="password" placeholder="Password">
 
+  <div class="show-pass">
+    <input type="checkbox" onclick="togglePassword()"> Show Password
+  </div>
+
   <button onclick="login()">Login</button>
 
   <p id="msg"></p>
 </div>
 
 <script>
-  const supabase = supabase.createClient(
+  /* ✅ FIXED: renamed client variable */
+  const supabaseClient = supabase.createClient(
     "https://ntfbcahivqivgjdexkgf.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc",
     { auth: { persistSession: true } }
   );
+
+  function togglePassword() {
+    const pwd = document.getElementById("password");
+    pwd.type = pwd.type === "password" ? "text" : "password";
+  }
 
   async function login() {
     const loginname = document.getElementById("loginname").value;
@@ -63,13 +79,13 @@
     const email = loginname + "@break.local";
 
     // try sign in
-    let { error } = await supabase.auth.signInWithPassword({
+    let { error } = await supabaseClient.auth.signInWithPassword({
       email, password
     });
 
     // first-time user → auto signup
     if (error) {
-      let { error: signupError } = await supabase.auth.signUp({
+      let { error: signupError } = await supabaseClient.auth.signUp({
         email, password
       });
 
@@ -83,7 +99,7 @@
     }
 
     // check user_master
-    const { data, error: dbErr } = await supabase
+    const { data, error: dbErr } = await supabaseClient
       .from("user_master")
       .select("user_id, role_id, is_active")
       .eq("loginname", loginname)
