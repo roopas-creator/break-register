@@ -116,8 +116,7 @@ window.login = async function () {
     return;
   }
 
-  const email = loginname + "@example.com";
-
+  const email = loginname + "@gmail.com";
   /* 1️⃣ Check user exists in user_master */
   const { data: user, error: userErr } = await supabase
     .from("user_master")
