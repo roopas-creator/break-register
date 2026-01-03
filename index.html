@@ -4,8 +4,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Break Register Login</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
     body { font-family: Arial; background:#f2f2f2; }
     .box {
@@ -41,32 +39,37 @@
 <div class="box">
   <h3>Break Register Login</h3>
 
-  <input id="loginname" placeholder="Login Name (eg: 1459)">
+  <input id="loginname" placeholder="Login Name (eg: 1234)">
   <input id="password" type="password" placeholder="Password">
 
   <div class="show-pass">
-    <input type="checkbox" onclick="togglePassword()"> Show Password
+    <input type="checkbox" id="showPwd"> Show Password
   </div>
 
-  <button onclick="login()">Login</button>
+  <button id="loginBtn">Login</button>
 
   <p id="msg"></p>
 </div>
 
-<script>
-  /* ✅ FIXED: renamed client variable */
-  const supabaseClient = supabase.createClient(
+<!-- ✅ IMPORTANT: module script -->
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+  const supabaseClient = createClient(
     "https://ntfbcahivqivgjdexkgf.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50ZmJjYWhpdnFpdmdqZGV4a2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MTU0MTgsImV4cCI6MjA4Mjk5MTQxOH0.o6mrBZp7FeV3_paMsRq807w8cR7NHEAuIfbyLmIfnnc",
     { auth: { persistSession: true } }
   );
 
-  function togglePassword() {
-    const pwd = document.getElementById("password");
-    pwd.type = pwd.type === "password" ? "text" : "password";
-  }
+  const loginBtn = document.getElementById("loginBtn");
+  const showPwd = document.getElementById("showPwd");
 
-  async function login() {
+  showPwd.addEventListener("change", () => {
+    const pwd = document.getElementById("password");
+    pwd.type = showPwd.checked ? "text" : "password";
+  });
+
+  loginBtn.addEventListener("click", async () => {
     const loginname = document.getElementById("loginname").value;
     const password  = document.getElementById("password").value;
     const msg = document.getElementById("msg");
@@ -78,12 +81,12 @@
 
     const email = loginname + "@break.local";
 
-    // try sign in
+    // try login
     let { error } = await supabaseClient.auth.signInWithPassword({
       email, password
     });
 
-    // first-time user → auto signup
+    // first time → create account
     if (error) {
       let { error: signupError } = await supabaseClient.auth.signUp({
         email, password
@@ -110,12 +113,11 @@
       return;
     }
 
-    if (data.role_id === 1) {
-      msg.innerText = "STAFF login successful";
-    } else {
-      msg.innerText = "HOD login successful";
-    }
-  }
+    msg.innerText =
+      data.role_id === 1
+        ? "STAFF login successful"
+        : "HOD login successful";
+  });
 </script>
 
 </body>
